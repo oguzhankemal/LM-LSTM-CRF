@@ -419,7 +419,7 @@ def load_embedding_wlm(emb_file, delimiter, feature_map, full_feature_set, casel
     outdoc_embedding_array = list()
     outdoc_word_array = list()
 
-    for line in open(emb_file, 'r'):
+    for line in open(emb_file, 'r',encoding="utf-8"):
         line = line.split(delimiter)
         vector = list(map(lambda t: float(t), filter(lambda n: n and not n.isspace(), line[1:])))
 

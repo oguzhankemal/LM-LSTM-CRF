@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6fd605be-a186-4145-9399-8bc223cb70fe}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>train_wc.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>CondaEnv|CondaEnv|pytorch04</InterpreterId>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="docs\framework.png" />
+    <Content Include="requirements.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="docs\source\conf.py" />
+    <Compile Include="eval_w.py" />
+    <Compile Include="eval_wc.py" />
+    <Compile Include="helper\preprocess.py" />
+    <Compile Include="model\crf.py" />
+    <Compile Include="model\evaluator.py" />
+    <Compile Include="model\highway.py" />
+    <Compile Include="model\lm_lstm_crf.py" />
+    <Compile Include="model\lstm_crf.py" />
+    <Compile Include="model\ner_dataset.py" />
+    <Compile Include="model\predictor.py" />
+    <Compile Include="model\utils.py" />
+    <Compile Include="model\__init__.py" />
+    <Compile Include="seq_w.py" />
+    <Compile Include="seq_wc.py" />
+    <Compile Include="train_w.py" />
+    <Compile Include="train_wc.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="docs" />
+    <Folder Include="docs\source" />
+    <Folder Include="model" />
+    <Folder Include="helper\" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="CondaEnv|CondaEnv|pytorch04" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

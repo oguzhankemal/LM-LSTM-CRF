@@ -21,13 +21,14 @@ import functools
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluating LM-BLSTM-CRF')
-    parser.add_argument('--load_arg', default='./checkpoint/ner/ner_4_cwlm_lstm_crf.json', help='path to arg json')
-    parser.add_argument('--load_check_point', default='./checkpoint/ner/ner_4_cwlm_lstm_crf.model', help='path to model checkpoint file')
+    parser.add_argument('--load_arg', default='D:/PythoProjects/Datasets/checkpoint/ner_tr_cwlm_lstm_crf.json', help='path to arg json')
+    parser.add_argument('--load_check_point', default='D:/PythoProjects/Datasets/checkpoint/ner_tr_cwlm_lstm_crf.model', help='path to model checkpoint file')
     parser.add_argument('--gpu',type=int, default=0, help='gpu id')
     parser.add_argument('--decode_type', choices=['label', 'string'], default='string', help='type of decode function, set `label` to couple label with text, or set `string` to insert label into test')
     parser.add_argument('--batch_size', type=int, default=50, help='size of batch')
-    parser.add_argument('--input_file', default='data/ner2003/test.txt', help='path to input un-annotated corpus')
-    parser.add_argument('--output_file', default='output.txt', help='path to output file')
+    #parser.add_argument('--input_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/test.txt', help='path to input un-annotated corpus')    
+    parser.add_argument('--input_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/WFS7with[p5].txt', help='path to input un-annotated corpus')
+    parser.add_argument('--output_file', default='output_tr.txt', help='path to output file')
     args = parser.parse_args()
 
     print('loading dictionary')
@@ -68,5 +69,5 @@ if __name__ == "__main__":
     predictor = predict_wc(if_cuda, f_map, c_map, l_map, f_map['<eof>'], c_map['\n'], l_map['<pad>'], l_map['<start>'], decode_label, args.batch_size, jd['caseless'])
 
     print('annotating')
-    with open(args.output_file, 'w') as fout:
+    with open(args.output_file, 'w', encoding='utf-8') as fout:
         predictor.output_batch(ner_model, features, fout)
