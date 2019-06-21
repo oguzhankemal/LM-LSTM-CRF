@@ -253,3 +253,21 @@ class LM_LSTM_CRF(nn.Module):
         crf_out = crf_out.view(self.word_seq_length, self.batch_size, self.tagset_size, self.tagset_size)
 
         return crf_out
+
+    def set_l_map(self, l_map):
+        """
+        set l_map
+        """
+        self.l_map = l_map
+
+    def set_f_map(self, f_map):
+        """
+        set l_map
+        """
+        self.f_map = f_map
+
+    def set_c_map(self, c_map):
+        """
+        set l_map
+        """
+        self.c_map = c_map
