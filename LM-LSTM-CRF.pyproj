@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId>CondaEnv|CondaEnv|pytorch04</InterpreterId>
+    <InterpreterId>Global|VisualStudio|pytorch04</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
@@ -25,11 +25,13 @@
   <ItemGroup>
     <Compile Include="docs\source\conf.py" />
     <Compile Include="eval_w.py" />
+    <Compile Include="eval_wc - Copy.py" />
     <Compile Include="eval_wc.py" />
     <Compile Include="helper\preprocess.py" />
     <Compile Include="model\crf.py" />
     <Compile Include="model\evaluator.py" />
     <Compile Include="model\highway.py" />
+    <Compile Include="model\lm_lstm_crf - Copy.py" />
     <Compile Include="model\lm_lstm_crf.py" />
     <Compile Include="model\lstm_crf.py" />
     <Compile Include="model\ner_dataset.py" />
@@ -37,8 +39,10 @@
     <Compile Include="model\utils.py" />
     <Compile Include="model\__init__.py" />
     <Compile Include="seq_w.py" />
+    <Compile Include="seq_wc - Copy.py" />
     <Compile Include="seq_wc.py" />
     <Compile Include="train_w.py" />
+    <Compile Include="train_wc - Copy.py" />
     <Compile Include="train_wc.py" />
   </ItemGroup>
   <ItemGroup>
@@ -48,7 +52,7 @@
     <Folder Include="helper\" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="CondaEnv|CondaEnv|pytorch04" />
+    <InterpreterReference Include="Global|VisualStudio|pytorch04" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

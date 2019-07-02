@@ -34,7 +34,7 @@ class LM_LSTM_CRF(nn.Module):
         highway_layers: number of highway layers
     """
 
-    def __init__(self, tagset_size, char_size, char_dim, char_hidden_dim, char_rnn_layers, embedding_dim, word_hidden_dim, word_rnn_layers, vocab_size, dropout_ratio, large_CRF=True, if_highway = False, in_doc_words = 2, highway_layers = 1):
+    def __init__(self, tagset_size, char_size, char_dim, char_hidden_dim, char_rnn_layers, embedding_dim, word_hidden_dim, word_rnn_layers, vocab_size, dropout_ratio, char_embeds,forw_char_lstm,back_char_lstm,char_pre_train_out, large_CRF=True, if_highway = False, in_doc_words = 2, highway_layers = 1):
 
         super(LM_LSTM_CRF, self).__init__()
         self.char_dim = char_dim
@@ -45,9 +45,9 @@ class LM_LSTM_CRF(nn.Module):
         self.word_size = vocab_size
         self.if_highway = if_highway
 
-        self.char_embeds = nn.Embedding(char_size, char_dim)
-        self.forw_char_lstm = nn.LSTM(char_dim, char_hidden_dim, num_layers=char_rnn_layers, bidirectional=False, dropout=dropout_ratio)
-        self.back_char_lstm = nn.LSTM(char_dim, char_hidden_dim, num_layers=char_rnn_layers, bidirectional=False, dropout=dropout_ratio)
+        self.char_embeds = char_embeds #nn.Embedding(char_size, char_dim)
+        self.forw_char_lstm = forw_char_lstm #nn.LSTM(char_dim, char_hidden_dim, num_layers=char_rnn_layers, bidirectional=False, dropout=dropout_ratio)
+        self.back_char_lstm = back_char_lstm #nn.LSTM(char_dim, char_hidden_dim, num_layers=char_rnn_layers, bidirectional=False, dropout=dropout_ratio)
         self.char_rnn_layers = char_rnn_layers
 
         self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
@@ -71,7 +71,7 @@ class LM_LSTM_CRF(nn.Module):
             self.back2word = highway.hw(char_hidden_dim, num_layers=highway_layers, dropout_ratio=dropout_ratio)
             self.fb2char = highway.hw(2 * char_hidden_dim, num_layers=highway_layers, dropout_ratio=dropout_ratio)
 
-        self.char_pre_train_out = nn.Linear(char_hidden_dim, char_size)
+        self.char_pre_train_out = char_pre_train_out #nn.Linear(char_hidden_dim, char_size)
         self.word_pre_train_out = nn.Linear(char_hidden_dim, in_doc_words)
 
         self.batch_size = 1
@@ -271,3 +271,15 @@ class LM_LSTM_CRF(nn.Module):
         set l_map
         """
         self.c_map = c_map
+
+    def set_crit_lm(self, crit_lm):
+        """
+        set crit_lm
+        """
+        self.crit_lm = crit_lm
+
+    def set_crit_ner(self, crit_ner):
+        """
+        set crit_ner
+        """
+        self.crit_ner = crit_ner

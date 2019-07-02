@@ -39,9 +39,10 @@ if __name__ == "__main__":
     parser.add_argument('--char_hidden', type=int, default=300, help='dimension of char-level layers')
     parser.add_argument('--word_hidden', type=int, default=300, help='dimension of word-level layers')
     parser.add_argument('--drop_out', type=float, default=0.55, help='dropout ratio')
-    parser.add_argument('--epoch', type=int, default=50, help='maximum epoch number')
+    parser.add_argument('--epoch', type=int, default=150, help='maximum epoch number')
+    parser.add_argument('--epoch_target', type=int, default=150, help='maximum epoch number')
     parser.add_argument('--start_epoch', type=int, default=0, help='start point of epoch')
-    parser.add_argument('--checkpoint', default='D:/PythoProjects/Datasets/checkpoint/ner_en_tr_', help='checkpoint path')
+    parser.add_argument('--checkpoint', default='D:/PythoProjects/Datasets/checkpoint/150_ner_en_tr_', help='checkpoint path')
     parser.add_argument('--caseless', action='store_true', help='caseless or not')
     parser.add_argument('--char_dim', type=int, default=30, help='dimension of char embedding')
     parser.add_argument('--word_dim', type=int, default=100, help='dimension of word embedding')
@@ -66,7 +67,7 @@ if __name__ == "__main__":
     parser.add_argument('--high_way', action='store_true', help='use highway layers')
     parser.add_argument('--highway_layers', type=int, default=1, help='number of highway layers')
     parser.add_argument('--eva_matrix', choices=['a', 'fa'], default='fa', help='use f1 and accuracy or accuracy alone')
-    parser.add_argument('--least_iters', type=int, default=5, help='at least train how many epochs before stop')
+    parser.add_argument('--least_iters', type=int, default=150, help='at least train how many epochs before stop')
     parser.add_argument('--shrink_embedding', action='store_true', help='shrink the embedding dictionary to corpus (open this if pre-trained embedding dictionary is too large, but disable this may yield better results on external corpus)')
     
     
@@ -74,7 +75,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     argsvars = vars(parser.parse_args())
     TASKS = args.tasks
-    TASKS = ['', '_target']
+    #TASKS = ['', '_target']
+    TASKS = ['_target']
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if args.gpu >= 0:
@@ -85,19 +88,11 @@ if __name__ == "__main__":
     print('TASKS', TASKS)
 
     c_map = dict()
-    models, eval_funcs = [], []
     for task in TASKS:
         # load corpus
         print('loading corpus')
         with codecs.open(argsvars['train_file' + task], 'r', 'utf-8') as f:
             lines = f.readlines()
-        with codecs.open(argsvars['dev_file' + task], 'r', 'utf-8') as f:
-            dev_lines = f.readlines()
-        with codecs.open(argsvars['test_file' + task], 'r', 'utf-8') as f:
-            test_lines = f.readlines()
-        
-        dev_features, dev_labels = utils.read_corpus(dev_lines)
-        test_features, test_labels = utils.read_corpus(test_lines)
 
         if argsvars['load_check_point'+task]:
             if os.path.isfile(argsvars['load_check_point'+task]):
@@ -107,7 +102,6 @@ if __name__ == "__main__":
                 f_map = checkpoint_file['f_map']
                 l_map = checkpoint_file['l_map']
                 c_map = checkpoint_file['c_map']
-                in_doc_words = checkpoint_file['in_doc_words']
                 train_features, train_labels = utils.read_corpus(lines)
             else:
                 print("no checkpoint found at: '{}'".format(argsvars['load_check_point'+task]))
@@ -122,6 +116,53 @@ if __name__ == "__main__":
                 if k not in c_map:
                     print(k)
                     c_map[k] = len(c_map)
+    
+    #shared char embedding
+    char_embeds = nn.Embedding(len(c_map),  args.char_dim)
+    forw_char_lstm = nn.LSTM(args.char_dim, args.char_hidden, num_layers=args.char_layers, bidirectional=False, dropout=args.drop_out)
+    back_char_lstm = nn.LSTM(args.char_dim, args.char_hidden, num_layers=args.char_layers, bidirectional=False, dropout=args.drop_out)
+
+    #if args.high_way:
+    #    forw2char = highway.hw(args.char_hidden, num_layers=args.char_layers, dropout_ratio=args.drop_out)
+    #    back2char = highway.hw(args.char_hidden, num_layers=args.char_layers, dropout_ratio=args.drop_out)
+    #    forw2word = highway.hw(args.char_hidden, num_layers=args.char_layers, dropout_ratio=args.drop_out)
+    #    back2word = highway.hw(args.char_hidden, num_layers=args.char_layers, dropout_ratio=args.drop_out)
+    #    fb2char = highway.hw(2 * args.char_hidden, num_layers=args.char_layers, dropout_ratio=args.drop_out)
+
+    char_pre_train_out = nn.Linear(args.char_hidden, len(c_map))
+    #shared char embedding end
+    
+    models, dataset_loaders,dev_dataset_loaders,test_dataset_loaders = [], [],[], []
+    for task in TASKS:
+        # load corpus
+        print('loading corpus')
+        with codecs.open(argsvars['train_file' + task], 'r', 'utf-8') as f:
+            lines = f.readlines()
+        with codecs.open(argsvars['dev_file' + task], 'r', 'utf-8') as f:
+            dev_lines = f.readlines()
+        with codecs.open(argsvars['test_file' + task], 'r', 'utf-8') as f:
+            test_lines = f.readlines()
+        
+        dev_features, dev_labels = utils.read_corpus(dev_lines)
+        test_features, test_labels = utils.read_corpus(test_lines)
+        args.start_epoch = 0
+        if argsvars['load_check_point'+task]:
+            if os.path.isfile(argsvars['load_check_point'+task]):
+                print("loading checkpoint: '{}'".format(argsvars['load_check_point'+task]))
+                checkpoint_file = torch.load(argsvars['load_check_point'+task])
+                args.start_epoch = checkpoint_file['epoch']
+                f_map = checkpoint_file['f_map']
+                l_map = checkpoint_file['l_map']
+                #c_map = checkpoint_file['c_map']
+                in_doc_words = checkpoint_file['in_doc_words']
+                train_features, train_labels = utils.read_corpus(lines)
+            else:
+                print("no checkpoint found at: '{}'".format(argsvars['load_check_point'+task]))
+        else:
+            print('constructing coding table')
+
+            # converting format
+            train_features, train_labels, f_map, l_map, c_map_task = utils.generate_corpus_char(lines, if_shrink_c_feature=True, c_thresholds=args.mini_count, if_shrink_w_feature=False)
 
             f_set = {v for v in f_map}
             f_map = utils.shrink_features(f_map, train_features, args.mini_count)
@@ -136,7 +177,7 @@ if __name__ == "__main__":
                 print('loading embedding')
                 if args.fine_tune:  # which means does not do fine-tune
                     f_map = {'<eof>': 0}
-                f_map, embedding_tensor, in_doc_words = utils.load_embedding_wlm(args.emb_file, ' ', f_map, dt_f_set, args.caseless, args.unk, args.word_dim, shrink_to_corpus=args.shrink_embedding)
+                f_map, embedding_tensor, in_doc_words = utils.load_embedding_wlm(argsvars['emb_file' + task], ' ', f_map, dt_f_set, args.caseless, args.unk, args.word_dim, shrink_to_corpus=args.shrink_embedding)
                 print("embedding size: '{}'".format(len(f_map)))
 
             l_set = functools.reduce(lambda x, y: x | y, map(lambda t: set(t), dev_labels))
@@ -152,12 +193,17 @@ if __name__ == "__main__":
         test_dataset, forw_test, back_test = utils.construct_bucket_mean_vb_wc(test_features, test_labels, l_map, c_map, f_map, args.caseless)
     
         dataset_loader = [torch.utils.data.DataLoader(tup, args.batch_size, shuffle=True, drop_last=False) for tup in dataset]
+        dataset_loaders.append(dataset_loader)
+
         dev_dataset_loader = [torch.utils.data.DataLoader(tup, 50, shuffle=False, drop_last=False) for tup in dev_dataset]
+        dev_dataset_loaders.append(dev_dataset_loader)
+
         test_dataset_loader = [torch.utils.data.DataLoader(tup, 50, shuffle=False, drop_last=False) for tup in test_dataset]
+        test_dataset_loaders.append(test_dataset_loader)
 
         # build model
         print('building model')
-        ner_model = LM_LSTM_CRF(len(l_map), len(c_map), args.char_dim, args.char_hidden, args.char_layers, args.word_dim, args.word_hidden, args.word_layers, len(f_map), args.drop_out, large_CRF=args.small_crf, if_highway=args.high_way, in_doc_words=in_doc_words, highway_layers = args.highway_layers)
+        ner_model = LM_LSTM_CRF(len(l_map), len(c_map), args.char_dim, args.char_hidden, args.char_layers, args.word_dim, args.word_hidden, args.word_layers, len(f_map), args.drop_out,char_embeds,forw_char_lstm,back_char_lstm,char_pre_train_out, large_CRF=args.small_crf, if_highway=args.high_way, in_doc_words=in_doc_words, highway_layers = args.highway_layers)
 
         if argsvars['load_check_point'+task]:
             ner_model.load_state_dict(checkpoint_file['state_dict'])
@@ -180,17 +226,23 @@ if __name__ == "__main__":
         ner_model.set_c_map(c_map)
         ner_model.set_l_map(l_map)
         ner_model.set_f_map(f_map)
+        ner_model.set_crit_lm(crit_lm)
+        ner_model.set_crit_ner(crit_ner)
         models.append(ner_model)
 
-    for i in range(len(TASKS)):
-        ner_model = models[i]
-        task = TASKS[i]
+    #for i in range(len(TASKS)):
+        #ner_model = models[i]
+        #dataset_loader = dataset_loaders[i]
+        #dev_dataset_loader = dev_dataset_loaders[i]
+        #test_dataset_loader = test_dataset_loaders[i]
+        #task = TASKS[i]
+
         if args.gpu >= 0:
             if_cuda = True
             print('device: ' + str(args.gpu))
             torch.cuda.set_device(args.gpu)
-            crit_ner.cuda()
-            crit_lm.cuda()
+            ner_model.crit_ner.cuda()
+            ner_model.crit_lm.cuda()
             ner_model.cuda()
             packer = CRFRepack_WC(len(ner_model.l_map), True)
         else:
@@ -204,7 +256,9 @@ if __name__ == "__main__":
         best_acc = float('-inf')
         track_list = list()
         start_time = time.time()
-        epoch_list = range(args.start_epoch, args.start_epoch + args.epoch)
+        #epoch_list = range(args.start_epoch, args.start_epoch + argsvars['epoch'+task])
+        epoch_list = range(args.start_epoch, argsvars['epoch'+task])
+
         patience_count = 0
 
         evaluator = eval_wc(packer, ner_model.l_map, args.eva_matrix)
@@ -218,7 +272,7 @@ if __name__ == "__main__":
                 f_f, f_p, b_f, b_p, w_f, tg_v, mask_v = packer.repack_vb(f_f, f_p, b_f, b_p, w_f, tg_v, mask_v, len_v)
                 ner_model.zero_grad()
                 scores = ner_model(f_f, f_p, b_f, b_p, w_f)
-                loss = crit_ner(scores, tg_v, mask_v)
+                loss = ner_model.crit_ner(scores, tg_v, mask_v)
                 epoch_loss += utils.to_scalar(loss)
                 if args.co_train:
                     cf_p = f_p[0:-1, :].contiguous()
@@ -226,9 +280,9 @@ if __name__ == "__main__":
                     cf_y = w_f[1:, :].contiguous()
                     cb_y = w_f[0:-1, :].contiguous()
                     cfs, _ = ner_model.word_pre_train_forward(f_f, cf_p)
-                    loss = loss + args.lambda0 * crit_lm(cfs, cf_y.view(-1))
+                    loss = loss + args.lambda0 * ner_model.crit_lm(cfs, cf_y.view(-1))
                     cbs, _ = ner_model.word_pre_train_backward(b_f, cb_p)
-                    loss = loss + args.lambda0 * crit_lm(cbs, cb_y.view(-1))
+                    loss = loss + args.lambda0 * ner_model.crit_lm(cbs, cb_y.view(-1))
                 loss.backward()
                 nn.utils.clip_grad_norm_(ner_model.parameters(), args.clip_grad)
                 optimizer.step()
@@ -327,7 +381,7 @@ if __name__ == "__main__":
                            dev_acc))
                     track_list.append({'loss': epoch_loss, 'dev_acc': dev_acc})
 
-            print('epoch: ' + str(args.start_epoch) + '\t in ' + str(args.epoch) + ' take: ' + str(time.time() - start_time) + ' s')
+            print('epoch: ' + str(args.start_epoch) + '\t in ' + str(argsvars['epoch'+task]) + ' take: ' + str(time.time() - start_time) + ' s')
 
             if patience_count >= args.patience and args.start_epoch >= args.least_iters:
                 break
