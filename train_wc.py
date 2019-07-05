@@ -26,9 +26,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Learning with LM-LSTM-CRF together with Language Model')
     parser.add_argument('--rand_embedding', action='store_true', help='random initialize word embedding')
     parser.add_argument('--emb_file', default='D:/PythoProjects/Datasets/glove/glove.6B.100d.txt', help='path to pre-trained embedding')
-    parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/train.txt', help='path to training file')
-    parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/valid.txt', help='path to development file')
-    parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/test.txt', help='path to test file')
+    parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/train_tr.txt', help='path to training file')
+    parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/valid_tr.txt', help='path to development file')
+    parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/test_tr.txt', help='path to test file')
     parser.add_argument('--emb_file_target', default='D:/PythoProjects/Datasets/glove/glove.6B.100d.txt', help='path to pre-trained embedding')
     parser.add_argument('--train_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Train7.txt', help='path to training file')
     parser.add_argument('--dev_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Twitter50K.txt', help='path to development file')
@@ -39,10 +39,10 @@ if __name__ == "__main__":
     parser.add_argument('--char_hidden', type=int, default=300, help='dimension of char-level layers')
     parser.add_argument('--word_hidden', type=int, default=300, help='dimension of word-level layers')
     parser.add_argument('--drop_out', type=float, default=0.55, help='dropout ratio')
-    parser.add_argument('--epoch', type=int, default=150, help='maximum epoch number')
-    parser.add_argument('--epoch_target', type=int, default=150, help='maximum epoch number')
+    parser.add_argument('--epoch', type=int, default=20, help='maximum epoch number')
+    parser.add_argument('--epoch_target', type=int, default=20, help='maximum epoch number')
     parser.add_argument('--start_epoch', type=int, default=0, help='start point of epoch')
-    parser.add_argument('--checkpoint', default='D:/PythoProjects/Datasets/checkpoint/150_ner_en_tr_', help='checkpoint path')
+    parser.add_argument('--checkpoint', default='D:/PythoProjects/Datasets/checkpoint/20_20_2_ner_tr_tr_', help='checkpoint path')
     parser.add_argument('--caseless', action='store_true', help='caseless or not')
     parser.add_argument('--char_dim', type=int, default=30, help='dimension of char embedding')
     parser.add_argument('--word_dim', type=int, default=100, help='dimension of word embedding')
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     parser.add_argument('--high_way', action='store_true', help='use highway layers')
     parser.add_argument('--highway_layers', type=int, default=1, help='number of highway layers')
     parser.add_argument('--eva_matrix', choices=['a', 'fa'], default='fa', help='use f1 and accuracy or accuracy alone')
-    parser.add_argument('--least_iters', type=int, default=150, help='at least train how many epochs before stop')
+    parser.add_argument('--least_iters', type=int, default=20, help='at least train how many epochs before stop')
     parser.add_argument('--shrink_embedding', action='store_true', help='shrink the embedding dictionary to corpus (open this if pre-trained embedding dictionary is too large, but disable this may yield better results on external corpus)')
     
     
@@ -75,13 +75,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     argsvars = vars(parser.parse_args())
     TASKS = args.tasks
-    #TASKS = ['', '_target']
-    TASKS = ['_target']
+    TASKS = ['', '_target']
+    #TASKS = ['_target']
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if args.gpu >= 0:
         torch.cuda.set_device(args.gpu)
+        print('gpu Enabled:')
 
     print('setting:')
     print(args)
@@ -114,13 +115,13 @@ if __name__ == "__main__":
             #Add task language's different chars to global char map
             for k in c_map_task:
                 if k not in c_map:
-                    print(k)
+                    #print(k)
                     c_map[k] = len(c_map)
     
     #shared char embedding
     char_embeds = nn.Embedding(len(c_map),  args.char_dim)
-    forw_char_lstm = nn.LSTM(args.char_dim, args.char_hidden, num_layers=args.char_layers, bidirectional=False, dropout=args.drop_out)
-    back_char_lstm = nn.LSTM(args.char_dim, args.char_hidden, num_layers=args.char_layers, bidirectional=False, dropout=args.drop_out)
+    #forw_char_lstm = nn.LSTM(args.char_dim, args.char_hidden, num_layers=args.char_layers, bidirectional=False, dropout=args.drop_out)
+    #back_char_lstm = nn.LSTM(args.char_dim, args.char_hidden, num_layers=args.char_layers, bidirectional=False, dropout=args.drop_out)
 
     #if args.high_way:
     #    forw2char = highway.hw(args.char_hidden, num_layers=args.char_layers, dropout_ratio=args.drop_out)
@@ -129,7 +130,7 @@ if __name__ == "__main__":
     #    back2word = highway.hw(args.char_hidden, num_layers=args.char_layers, dropout_ratio=args.drop_out)
     #    fb2char = highway.hw(2 * args.char_hidden, num_layers=args.char_layers, dropout_ratio=args.drop_out)
 
-    char_pre_train_out = nn.Linear(args.char_hidden, len(c_map))
+    #char_pre_train_out = nn.Linear(args.char_hidden, len(c_map))
     #shared char embedding end
     
     models, dataset_loaders,dev_dataset_loaders,test_dataset_loaders = [], [],[], []
@@ -203,8 +204,14 @@ if __name__ == "__main__":
 
         # build model
         print('building model')
-        ner_model = LM_LSTM_CRF(len(l_map), len(c_map), args.char_dim, args.char_hidden, args.char_layers, args.word_dim, args.word_hidden, args.word_layers, len(f_map), args.drop_out,char_embeds,forw_char_lstm,back_char_lstm,char_pre_train_out, large_CRF=args.small_crf, if_highway=args.high_way, in_doc_words=in_doc_words, highway_layers = args.highway_layers)
-
+        ner_model = LM_LSTM_CRF(len(l_map), len(c_map), args.char_dim, args.char_hidden, args.char_layers, args.word_dim, args.word_hidden, args.word_layers, len(f_map), args.drop_out,char_embeds, large_CRF=args.small_crf, if_highway=args.high_way, in_doc_words=in_doc_words, highway_layers = args.highway_layers)
+        
+        print('parameters')
+        for parameter in ner_model.parameters():
+            print(parameter)
+        for name, param in ner_model.named_parameters():
+            if param.requires_grad:
+                print (name, param.data)
         if argsvars['load_check_point'+task]:
             ner_model.load_state_dict(checkpoint_file['state_dict'])
         else:

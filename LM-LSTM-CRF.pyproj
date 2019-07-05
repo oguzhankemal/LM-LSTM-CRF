@@ -28,6 +28,7 @@
     <Compile Include="eval_wc - Copy.py" />
     <Compile Include="eval_wc.py" />
     <Compile Include="helper\preprocess.py" />
+    <Compile Include="helper\translater.py" />
     <Compile Include="model\crf.py" />
     <Compile Include="model\evaluator.py" />
     <Compile Include="model\highway.py" />
