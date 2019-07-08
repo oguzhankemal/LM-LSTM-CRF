@@ -22,8 +22,8 @@ import functools
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluating LM-BLSTM-CRF')
-    parser.add_argument('--load_arg', default='D:/PythoProjects/Datasets/checkpoint/150_ner_en_tr_cwlm_lstm_crf_target.json', help='path to arg json')
-    parser.add_argument('--load_check_point', default='D:/PythoProjects/Datasets/checkpoint/150_ner_en_tr_cwlm_lstm_crf_target.model', help='path to model checkpoint file')
+    parser.add_argument('--load_arg', default='D:/PythoProjects/Datasets/checkpoint/20_20_ner_tr_tr_cwlm_lstm_crf_target.json', help='path to arg json')
+    parser.add_argument('--load_check_point', default='D:/PythoProjects/Datasets/checkpoint/20_20_ner_tr_tr_cwlm_lstm_crf_target.model', help='path to model checkpoint file')
     parser.add_argument('--gpu',type=int, default=0, help='gpu id')
     parser.add_argument('--eva_matrix', choices=['a', 'fa'], default='fa', help='use f1 and accuracy or f1 alone')
     parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/WFS7with[p5].txt', help='path to test file, if set to none, would use test_file path in the checkpoint file')
@@ -61,21 +61,9 @@ if __name__ == "__main__":
     
     #shared char embedding
     char_embeds = nn.Embedding(len(c_map),  jd['char_dim'])
-    forw_char_lstm = nn.LSTM(jd['char_dim'], jd['char_hidden'], num_layers=jd['char_layers'], bidirectional=False, dropout=jd['drop_out'])
-    back_char_lstm = nn.LSTM(jd['char_dim'], jd['char_hidden'], num_layers=jd['char_layers'], bidirectional=False, dropout=jd['drop_out'])
-
-    #if args.high_way:
-    #    forw2char = highway.hw(jd['char_hidden'], num_layers=jd['char_layers'], dropout_ratio=jd['drop_out'])
-    #    back2char = highway.hw(jd['char_hidden'], num_layers=jd['char_layers'], dropout_ratio=jd['drop_out'])
-    #    forw2word = highway.hw(jd['char_hidden'], num_layers=jd['char_layers'], dropout_ratio=jd['drop_out'])
-    #    back2word = highway.hw(jd['char_hidden'], num_layers=jd['char_layers'], dropout_ratio=jd['drop_out'])
-    #    fb2char = highway.hw(2 * jd['char_hidden'], num_layers=jd['char_layers'], dropout_ratio=jd['drop_out'])
-
-    char_pre_train_out = nn.Linear(jd['char_hidden'], len(c_map))
-    #shared char embedding end
 
     # build model
-    ner_model = LM_LSTM_CRF(len(l_map), len(c_map), jd['char_dim'], jd['char_hidden'], jd['char_layers'], jd['word_dim'], jd['word_hidden'], jd['word_layers'], len(f_map), jd['drop_out'],char_embeds,forw_char_lstm,back_char_lstm,char_pre_train_out, large_CRF=jd['small_crf'], if_highway=jd['high_way'], in_doc_words=in_doc_words, highway_layers = jd['highway_layers'])
+    ner_model = LM_LSTM_CRF(len(l_map), len(c_map), jd['char_dim'], jd['char_hidden'], jd['char_layers'], jd['word_dim'], jd['word_hidden'], jd['word_layers'], len(f_map), jd['drop_out'],char_embeds, large_CRF=jd['small_crf'], if_highway=jd['high_way'], in_doc_words=in_doc_words, highway_layers = jd['highway_layers'])
 
     ner_model.load_state_dict(checkpoint_file['state_dict'])
 
