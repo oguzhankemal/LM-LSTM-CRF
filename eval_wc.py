@@ -22,8 +22,8 @@ import functools
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluating LM-BLSTM-CRF')
-    parser.add_argument('--load_arg', default='D:/PythoProjects/Datasets/checkpoint/20_20_ner_tr_tr_cwlm_lstm_crf_target.json', help='path to arg json')
-    parser.add_argument('--load_check_point', default='D:/PythoProjects/Datasets/checkpoint/20_20_ner_tr_tr_cwlm_lstm_crf_target.model', help='path to model checkpoint file')
+    parser.add_argument('--load_arg', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_ner_tr_cwlm_lstm_crf_target.json', help='path to arg json')
+    parser.add_argument('--load_check_point', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_ner_tr_cwlm_lstm_crf_target.model', help='path to model checkpoint file')
     parser.add_argument('--gpu',type=int, default=0, help='gpu id')
     parser.add_argument('--eva_matrix', choices=['a', 'fa'], default='fa', help='use f1 and accuracy or f1 alone')
     parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/WFS7with[p5].txt', help='path to test file, if set to none, would use test_file path in the checkpoint file')
@@ -61,9 +61,10 @@ if __name__ == "__main__":
     
     #shared char embedding
     char_embeds = nn.Embedding(len(c_map),  jd['char_dim'])
+    word_embeds = nn.Embedding(len(f_map), jd['word_dim'])
 
     # build model
-    ner_model = LM_LSTM_CRF(len(l_map), len(c_map), jd['char_dim'], jd['char_hidden'], jd['char_layers'], jd['word_dim'], jd['word_hidden'], jd['word_layers'], len(f_map), jd['drop_out'],char_embeds, large_CRF=jd['small_crf'], if_highway=jd['high_way'], in_doc_words=in_doc_words, highway_layers = jd['highway_layers'])
+    ner_model = LM_LSTM_CRF(len(l_map), len(c_map), jd['char_dim'], jd['char_hidden'], jd['char_layers'], jd['word_dim'], jd['word_hidden'], jd['word_layers'], len(f_map), jd['drop_out'],char_embeds,word_embeds, large_CRF=jd['small_crf'], if_highway=jd['high_way'], in_doc_words=in_doc_words, highway_layers = jd['highway_layers'])
 
     ner_model.load_state_dict(checkpoint_file['state_dict'])
 

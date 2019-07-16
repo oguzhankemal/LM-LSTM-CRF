@@ -11,6 +11,8 @@ from model.lm_lstm_crf import *
 import model.utils as utils
 from model.evaluator import eval_wc
 
+from torch.utils.tensorboard import SummaryWriter
+
 import argparse
 import json
 import os
@@ -22,13 +24,53 @@ import functools
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
+def start_logging(logdir, experiment_name):
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
+    logfilename = os.path.join(logdir, experiment_name + strftime("%Y_%m_%d,%H_%M_%S", gmtime()) + ".log")
+    logginglevel = logging.DEBUG
+    logging.basicConfig(level=logginglevel, filename = logfilename, format='%(asctime)s %(levelname)s %(message)s')
+
+def decide_log_dir(self, args):
+    if "exp_dir" not in args or args.exp_dir is None:
+        args.exp_dir = os.path.expanduser("D:/PythoProjects/Datasets/logs/log_dir/")
+
+    if "name" not in args or args.name is None:
+        args.name = "NONAME"
+
+    args.exp_number = self.decide_experiment_number(args.exp_dir, args.name)
+
+    log_dir = os.path.join(args.exp_dir, "results", args.name + str(args.exp_number))
+
+    return log_dir
+
+def decide_experiment_number(self, exp_dir, exp_name):
+    path = os.path.join(exp_dir, "results", exp_name)
+    path = os.path.expanduser(path)
+    numlist = [int(name.replace(path, "")[:-1]) for name in glob.glob(os.path.join(path + "*",""))]
+        
+    if not numlist:
+        return 1
+    else:
+        return max(numlist) + 1
+
+def save_args(self):
+    file_name = os.path.join(self.args.log_dir, "config.json")
+    with open(file_name, 'w') as outf:
+        json.dump(self.args, outf)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Learning with LM-LSTM-CRF together with Language Model')
     parser.add_argument('--rand_embedding', action='store_true', help='random initialize word embedding')
     parser.add_argument('--emb_file', default='D:/PythoProjects/Datasets/glove/glove.6B.100d.txt', help='path to pre-trained embedding')
-    parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/train_tr.txt', help='path to training file')
-    parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/valid_tr.txt', help='path to development file')
-    parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/test_tr.txt', help='path to test file')
+    #parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/train_iobes.txt', help='path to training file')
+    #parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/valid_iobes.txt', help='path to development file')
+    #parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/test_iobes.txt', help='path to test file')
+    
+    parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Train7.txt', help='path to training file')
+    parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Twitter50K.txt', help='path to development file')
+    parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/WFS7with[p5].txt', help='path to test file')
+
     parser.add_argument('--emb_file_target', default='D:/PythoProjects/Datasets/glove/glove.6B.100d.txt', help='path to pre-trained embedding')
     parser.add_argument('--train_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Train7.txt', help='path to training file')
     parser.add_argument('--dev_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Twitter50K.txt', help='path to development file')
@@ -39,10 +81,10 @@ if __name__ == "__main__":
     parser.add_argument('--char_hidden', type=int, default=300, help='dimension of char-level layers')
     parser.add_argument('--word_hidden', type=int, default=300, help='dimension of word-level layers')
     parser.add_argument('--drop_out', type=float, default=0.55, help='dropout ratio')
-    parser.add_argument('--epoch', type=int, default=20, help='maximum epoch number')
-    parser.add_argument('--epoch_target', type=int, default=20, help='maximum epoch number')
+    parser.add_argument('--epoch', type=int, default=10, help='maximum epoch number')
+    parser.add_argument('--epoch_target', type=int, default=10, help='maximum epoch number')
     parser.add_argument('--start_epoch', type=int, default=0, help='start point of epoch')
-    parser.add_argument('--checkpoint', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_20_ner_tr_tr_', help='checkpoint path')
+    parser.add_argument('--checkpoint', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_ner_twitter_twitter_transfer_cwlm_lstm_crf_', help='checkpoint path')
     parser.add_argument('--caseless', action='store_true', help='caseless or not')
     parser.add_argument('--char_dim', type=int, default=30, help='dimension of char embedding')
     parser.add_argument('--word_dim', type=int, default=100, help='dimension of word embedding')
@@ -51,7 +93,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr', type=float, default=0.015, help='initial learning rate')
     parser.add_argument('--lr_decay', type=float, default=0.05, help='decay ratio of learning rate')
     parser.add_argument('--fine_tune', action='store_false', help='fine tune the diction of word embedding or not')
-    parser.add_argument('--load_check_point', default='', help='path previous checkpoint that want to be loaded')
+    parser.add_argument('--load_check_point', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_ner_twitter_twitter_transfer_cwlm_lstm_crf_cwlm_lstm_crf.model', help='path previous checkpoint that want to be loaded')
     parser.add_argument('--load_check_point_target', default='', help='path previous target checkpoint that want to be loaded')
     #parser.add_argument('--load_check_point', default='D:/PythoProjects/Datasets/checkpoint/ner_en_tr_cwlm_lstm_crf.model', help='path previous checkpoint that want to be loaded')
     parser.add_argument('--load_opt', action='store_true', help='also load optimizer from the checkpoint')
@@ -67,9 +109,12 @@ if __name__ == "__main__":
     parser.add_argument('--high_way', action='store_true', help='use highway layers')
     parser.add_argument('--highway_layers', type=int, default=1, help='number of highway layers')
     parser.add_argument('--eva_matrix', choices=['a', 'fa'], default='fa', help='use f1 and accuracy or accuracy alone')
-    parser.add_argument('--least_iters', type=int, default=20, help='at least train how many epochs before stop')
+    parser.add_argument('--least_iters', type=int, default=10, help='at least train how many epochs before stop')
     parser.add_argument('--shrink_embedding', action='store_true', help='shrink the embedding dictionary to corpus (open this if pre-trained embedding dictionary is too large, but disable this may yield better results on external corpus)')
     
+    parser.add_argument('--log_dir', default='D:/PythoProjects/Datasets/logs/log_dir/', help='log path')
+    parser.add_argument('--name', default='tensorflowtest', help='log name')
+
     
     parser.add_argument('--tasks', nargs='+')
     args = parser.parse_args()
@@ -77,6 +122,14 @@ if __name__ == "__main__":
     TASKS = args.tasks
     TASKS = ['', '_target']
     #TASKS = ['_target']
+
+    
+
+    if args.log_dir is None:
+        args.log_dir = self.decide_log_dir(args)
+    if not os.path.exists(args.log_dir):
+        os.makedirs(args.log_dir)
+    
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -89,11 +142,20 @@ if __name__ == "__main__":
     print('TASKS', TASKS)
 
     c_map = dict()
+    f_map = dict()
+    l_map = dict()
     for task in TASKS:
         # load corpus
         print('loading corpus')
         with codecs.open(argsvars['train_file' + task], 'r', 'utf-8') as f:
             lines = f.readlines()
+        with codecs.open(argsvars['dev_file' + task], 'r', 'utf-8') as f:
+            dev_lines = f.readlines()
+        with codecs.open(argsvars['test_file' + task], 'r', 'utf-8') as f:
+            test_lines = f.readlines()
+
+        dev_features, dev_labels = utils.read_corpus(dev_lines)
+        test_features, test_labels = utils.read_corpus(test_lines)
 
         if argsvars['load_check_point'+task]:
             if os.path.isfile(argsvars['load_check_point'+task]):
@@ -110,20 +172,40 @@ if __name__ == "__main__":
             print('constructing coding table')
 
             # converting format
-            train_features, train_labels, f_map, l_map, c_map_task = utils.generate_corpus_char(lines, if_shrink_c_feature=True, c_thresholds=args.mini_count, if_shrink_w_feature=False)
+            train_features, train_labels, f_map_task, l_map_task, c_map_task = utils.generate_corpus_char(lines, if_shrink_c_feature=True, c_thresholds=args.mini_count, if_shrink_w_feature=False)
 
             #Add task language's different chars to global char map
             for k in c_map_task:
                 if k not in c_map:
                     #print(k)
                     c_map[k] = len(c_map)
-    
+
+            #Add task language's different words to global word map
+            for k in f_map_task:
+                if k not in f_map:
+                    f_map[k] = len(f_map)
+
+            #Add task language's different labels to global labels map
+            for k in l_map_task:
+                if k not in l_map:
+                    l_map[k] = len(l_map)
+
+        
+        l_set = functools.reduce(lambda x, y: x | y, map(lambda t: set(t), dev_labels))
+        l_set = functools.reduce(lambda x, y: x | y, map(lambda t: set(t), test_labels), l_set)
+        for label in l_set:
+            if label not in l_map:
+                l_map[label] = len(l_map)
+
     #shared char embedding
     char_embeds = nn.Embedding(len(c_map),  args.char_dim)
+    word_embeds = nn.Embedding(len(f_map), args.word_dim)
     
     models, dataset_loaders,dev_dataset_loaders,test_dataset_loaders = [], [],[], []
     for task in TASKS:
         # load corpus
+        
+        writer = SummaryWriter(log_dir=args.log_dir)
         print('loading corpus')
         with codecs.open(argsvars['train_file' + task], 'r', 'utf-8') as f:
             lines = f.readlines()
@@ -140,8 +222,8 @@ if __name__ == "__main__":
                 print("loading checkpoint: '{}'".format(argsvars['load_check_point'+task]))
                 checkpoint_file = torch.load(argsvars['load_check_point'+task])
                 args.start_epoch = checkpoint_file['epoch']
-                f_map = checkpoint_file['f_map']
-                l_map = checkpoint_file['l_map']
+                #f_map = checkpoint_file['f_map']
+                #l_map = checkpoint_file['l_map']
                 #c_map = checkpoint_file['c_map']
                 in_doc_words = checkpoint_file['in_doc_words']
                 train_features, train_labels = utils.read_corpus(lines)
@@ -151,7 +233,7 @@ if __name__ == "__main__":
             print('constructing coding table')
 
             # converting format
-            train_features, train_labels, f_map, l_map, c_map_task = utils.generate_corpus_char(lines, if_shrink_c_feature=True, c_thresholds=args.mini_count, if_shrink_w_feature=False)
+            train_features, train_labels, f_map_task, l_map_task, c_map_task = utils.generate_corpus_char(lines, if_shrink_c_feature=True, c_thresholds=args.mini_count, if_shrink_w_feature=False)
 
             f_set = {v for v in f_map}
             f_map = utils.shrink_features(f_map, train_features, args.mini_count)
@@ -169,11 +251,7 @@ if __name__ == "__main__":
                 f_map, embedding_tensor, in_doc_words = utils.load_embedding_wlm(argsvars['emb_file' + task], ' ', f_map, dt_f_set, args.caseless, args.unk, args.word_dim, shrink_to_corpus=args.shrink_embedding)
                 print("embedding size: '{}'".format(len(f_map)))
 
-            l_set = functools.reduce(lambda x, y: x | y, map(lambda t: set(t), dev_labels))
-            l_set = functools.reduce(lambda x, y: x | y, map(lambda t: set(t), test_labels), l_set)
-            for label in l_set:
-                if label not in l_map:
-                    l_map[label] = len(l_map)
+            
     
         print('constructing dataset')
         # construct dataset
@@ -192,7 +270,7 @@ if __name__ == "__main__":
 
         # build model
         print('building model')
-        ner_model = LM_LSTM_CRF(len(l_map), len(c_map), args.char_dim, args.char_hidden, args.char_layers, args.word_dim, args.word_hidden, args.word_layers, len(f_map), args.drop_out,char_embeds, large_CRF=args.small_crf, if_highway=args.high_way, in_doc_words=in_doc_words, highway_layers = args.highway_layers)
+        ner_model = LM_LSTM_CRF(len(l_map), len(c_map), args.char_dim, args.char_hidden, args.char_layers, args.word_dim, args.word_hidden, args.word_layers, len(f_map), args.drop_out,char_embeds,word_embeds, large_CRF=args.small_crf, if_highway=args.high_way, in_doc_words=in_doc_words, highway_layers = args.highway_layers)
         
         print('parameters')
         for parameter in ner_model.parameters():
@@ -201,7 +279,10 @@ if __name__ == "__main__":
             if param.requires_grad:
                 print (name, param.data)
         if argsvars['load_check_point'+task]:
-            ner_model.load_state_dict(checkpoint_file['state_dict'])
+            state_dict_temp = checkpoint_file['state_dict'];
+            state_dict_temp['word_embeds.weight'] = ner_model.word_embeds.weight;
+            ner_model.load_state_dict(state_dict_temp)
+            #ner_model.load_state_dict(checkpoint_file['state_dict'])
         else:
             if not args.rand_embedding:
                 ner_model.load_pretrained_word_embedding(embedding_tensor)
@@ -294,6 +375,13 @@ if __name__ == "__main__":
                 for label, (dev_f1, dev_pre, dev_rec, dev_acc, msg) in dev_result.items():
                     print('DEV : %s : dev_f1: %.4f dev_rec: %.4f dev_pre: %.4f dev_acc: %.4f | %s\n' % (label, dev_f1, dev_rec, dev_pre, dev_acc, msg))
                 (dev_f1, dev_pre, dev_rec, dev_acc, msg) = dev_result['total']
+                
+                #if task is not '':
+                name = "_twitter_twitter_transfer"+task
+                writer.add_scalar("dev_f1"+name, dev_f1, args.start_epoch)
+                writer.add_scalar("dev_pre"+name, dev_pre, args.start_epoch)
+                writer.add_scalar("dev_rec"+name, dev_rec, args.start_epoch)
+                writer.add_scalar("dev_acc"+name, dev_acc, args.start_epoch)
 
                 if dev_f1 > best_f1:
                     patience_count = 0
@@ -313,6 +401,11 @@ if __name__ == "__main__":
                          dev_acc,
                          test_f1,
                          test_acc))
+                    #if task is not '':
+                    writer.add_scalar("test_f1"+name, test_f1, args.start_epoch)
+                    writer.add_scalar("test_pre"+name, test_pre, args.start_epoch)
+                    writer.add_scalar("test_rec"+name, test_rec, args.start_epoch)
+                    writer.add_scalar("test_acc"+name, test_acc, args.start_epoch)
 
                     try:
                         utils.save_checkpoint({
@@ -353,6 +446,13 @@ if __name__ == "__main__":
                          args.start_epoch,
                          dev_acc,
                          test_acc))
+                    
+                    name = task
+
+                    #if task is not '':
+                    name = "_twitter_twitter_transfer"+task
+                    writer.add_scalar("dev_acc"+name, dev_acc, start_epoch)
+                    writer.add_scalar("test_acc"+name, test_acc, start_epoch)
 
                     try:
                         utils.save_checkpoint({
@@ -384,6 +484,7 @@ if __name__ == "__main__":
         #print best
         if 'f' in args.eva_matrix:
             eprint(args.checkpoint + ' dev_f1: %.4f dev_rec: %.4f dev_pre: %.4f dev_acc: %.4f test_f1: %.4f test_rec: %.4f test_pre: %.4f test_acc: %.4f\n' % (dev_f1, dev_rec, dev_pre, dev_acc, test_f1, test_rec, test_pre, test_acc))
+            
         else:
             eprint(args.checkpoint + ' dev_acc: %.4f test_acc: %.4f\n' % (dev_acc, test_acc))
 

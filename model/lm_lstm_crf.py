@@ -34,7 +34,7 @@ class LM_LSTM_CRF(nn.Module):
         highway_layers: number of highway layers
     """
 
-    def __init__(self, tagset_size, char_size, char_dim, char_hidden_dim, char_rnn_layers, embedding_dim, word_hidden_dim, word_rnn_layers, vocab_size, dropout_ratio, char_embeds, large_CRF=True, if_highway = False, in_doc_words = 2, highway_layers = 1):
+    def __init__(self, tagset_size, char_size, char_dim, char_hidden_dim, char_rnn_layers, embedding_dim, word_hidden_dim, word_rnn_layers, vocab_size, dropout_ratio, char_embeds,word_embeds, large_CRF=True, if_highway = False, in_doc_words = 2, highway_layers = 1):
 
         super(LM_LSTM_CRF, self).__init__()
         self.char_dim = char_dim
@@ -54,7 +54,8 @@ class LM_LSTM_CRF(nn.Module):
         #self.back_char_lstm = back_char_lstm
         self.char_rnn_layers = char_rnn_layers
 
-        self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
+        #self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
+        self.word_embeds = word_embeds
 
         self.word_lstm = nn.LSTM(embedding_dim + char_hidden_dim * 2, word_hidden_dim // 2, num_layers=word_rnn_layers, bidirectional=True, dropout=dropout_ratio)
 

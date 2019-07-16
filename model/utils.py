@@ -159,6 +159,8 @@ def shrink_features(feature_map, features, thresholds):
     feature_count = {k: 0 for (k, v) in iter(feature_map.items())}
     for feature_list in features:
         for feature in feature_list:
+            if '\ufeff' in feature:
+                feature = feature.replace('\ufeff', '')
             feature_count[feature] += 1
     shrinked_feature_count = [k for (k, v) in iter(feature_count.items()) if v >= thresholds]
     feature_map = {shrinked_feature_count[ind]: (ind + 1) for ind in range(0, len(shrinked_feature_count))}
@@ -188,7 +190,10 @@ def generate_corpus(lines, if_shrink_feature=False, thresholds=1):
     for line in lines:
         if not (line.isspace() or (len(line) > 10 and line[0:10] == '-DOCSTART-')):
             line = line.rstrip('\n').split()
+            if '\ufeff' in line[0]:
+                line[0] = line[0].replace('\ufeff', '')
             tmp_fl.append(line[0])
+
             if line[0] not in feature_map:
                 feature_map[line[0]] = len(feature_map) + 1 #0 is for unk
             tmp_ll.append(line[-1])
