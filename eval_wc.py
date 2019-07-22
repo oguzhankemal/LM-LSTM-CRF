@@ -22,8 +22,8 @@ import functools
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluating LM-BLSTM-CRF')
-    parser.add_argument('--load_arg', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_ner_tr_cwlm_lstm_crf_target.json', help='path to arg json')
-    parser.add_argument('--load_check_point', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_ner_tr_cwlm_lstm_crf_target.model', help='path to model checkpoint file')
+    parser.add_argument('--load_arg', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_ner_twitter_twitter_transfer_cwlm_lstm_crf_cwlm_lstm_crf.json', help='path to arg json')
+    parser.add_argument('--load_check_point', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_ner_twitter_twitter_transfer_cwlm_lstm_crf_cwlm_lstm_crf.model', help='path to model checkpoint file')
     parser.add_argument('--gpu',type=int, default=0, help='gpu id')
     parser.add_argument('--eva_matrix', choices=['a', 'fa'], default='fa', help='use f1 and accuracy or f1 alone')
     parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/WFS7with[p5].txt', help='path to test file, if set to none, would use test_file path in the checkpoint file')
@@ -35,8 +35,20 @@ if __name__ == "__main__":
 
     checkpoint_file = torch.load(args.load_check_point, map_location=lambda storage, loc: storage)
     f_map = checkpoint_file['f_map']
+    f= open("D:/PythoProjects/Datasets/checkpoint_domain_transfer/f_map.txt","w+")
+    f.write(json.dumps(f_map))
+    f.close() 
+
     l_map = checkpoint_file['l_map']
+    f= open("D:/PythoProjects/Datasets/checkpoint_domain_transfer/l_map.txt","w+")
+    f.write(json.dumps(l_map))
+    f.close() 
+
     c_map = checkpoint_file['c_map']
+    f= open("D:/PythoProjects/Datasets/checkpoint_domain_transfer/c_map.txt","w+")
+    f.write(json.dumps(c_map))
+    f.close() 
+
     in_doc_words = checkpoint_file['in_doc_words']
     if args.gpu >= 0:
         torch.cuda.set_device(args.gpu)

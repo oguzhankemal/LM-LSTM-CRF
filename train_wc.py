@@ -63,13 +63,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Learning with LM-LSTM-CRF together with Language Model')
     parser.add_argument('--rand_embedding', action='store_true', help='random initialize word embedding')
     parser.add_argument('--emb_file', default='D:/PythoProjects/Datasets/glove/glove.6B.100d.txt', help='path to pre-trained embedding')
-    #parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/train_iobes.txt', help='path to training file')
-    #parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/valid_iobes.txt', help='path to development file')
-    #parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/test_iobes.txt', help='path to test file')
+    parser.add_argument('--train_file',default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/train_tr_iobes.txt',help='path to training file')
+    parser.add_argument('--dev_file',default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/valid_tr_iobes.txt',help='path to development file')
+    parser.add_argument('--test_file',default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/test_tr_iobes.txt',help='path to test file')
     
-    parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Train7.txt', help='path to training file')
-    parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Twitter50K.txt', help='path to development file')
-    parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/WFS7with[p5].txt', help='path to test file')
+    #parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Train7.txt', help='path to training file')
+    #parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Twitter50K.txt', help='path to development file')
+    #parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/WFS7with[p5].txt', help='path to test file')
 
     parser.add_argument('--emb_file_target', default='D:/PythoProjects/Datasets/glove/glove.6B.100d.txt', help='path to pre-trained embedding')
     parser.add_argument('--train_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Train7.txt', help='path to training file')
@@ -81,10 +81,10 @@ if __name__ == "__main__":
     parser.add_argument('--char_hidden', type=int, default=300, help='dimension of char-level layers')
     parser.add_argument('--word_hidden', type=int, default=300, help='dimension of word-level layers')
     parser.add_argument('--drop_out', type=float, default=0.55, help='dropout ratio')
-    parser.add_argument('--epoch', type=int, default=10, help='maximum epoch number')
-    parser.add_argument('--epoch_target', type=int, default=10, help='maximum epoch number')
+    parser.add_argument('--epoch', type=int, default=20, help='maximum epoch number')
+    parser.add_argument('--epoch_target', type=int, default=20, help='maximum epoch number')
     parser.add_argument('--start_epoch', type=int, default=0, help='start point of epoch')
-    parser.add_argument('--checkpoint', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_ner_twitter_twitter_transfer_cwlm_lstm_crf_', help='checkpoint path')
+    parser.add_argument('--checkpoint', default='D:/PythoProjects/CheckPoints/Conll03_Translated_To_Turkish_Twitter_Shared_Word_Char_Embedding/Conll03_Translated_To_Turkish_Twitter_Shared_Word_Char_Embedding_Cwlm_Lstm_Crf_', help='checkpoint path')
     parser.add_argument('--caseless', action='store_true', help='caseless or not')
     parser.add_argument('--char_dim', type=int, default=30, help='dimension of char embedding')
     parser.add_argument('--word_dim', type=int, default=100, help='dimension of word embedding')
@@ -93,9 +93,11 @@ if __name__ == "__main__":
     parser.add_argument('--lr', type=float, default=0.015, help='initial learning rate')
     parser.add_argument('--lr_decay', type=float, default=0.05, help='decay ratio of learning rate')
     parser.add_argument('--fine_tune', action='store_false', help='fine tune the diction of word embedding or not')
-    parser.add_argument('--load_check_point', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_ner_twitter_twitter_transfer_cwlm_lstm_crf_cwlm_lstm_crf.model', help='path previous checkpoint that want to be loaded')
+    parser.add_argument('--load_check_point', default='D:/PythoProjects/CheckPoints/Conll03_Translated_To_Turkish_Twitter_Shared_Word_Char_Embedding/Conll03_Translated_To_Turkish_Twitter_Shared_Word_Char_Embedding_Cwlm_Lstm_Crf_cwlm_lstm_crf.model', help='path previous checkpoint that want to be loaded')
     parser.add_argument('--load_check_point_target', default='', help='path previous target checkpoint that want to be loaded')
-    #parser.add_argument('--load_check_point', default='D:/PythoProjects/Datasets/checkpoint/ner_en_tr_cwlm_lstm_crf.model', help='path previous checkpoint that want to be loaded')
+    #parser.add_argument('--load_check_point',
+    #default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_ner_twitter_cwlm_lstm_crf_cwlm_lstm_crf_target.model',
+    #help='path previous checkpoint that want to be loaded')
     parser.add_argument('--load_opt', action='store_true', help='also load optimizer from the checkpoint')
     parser.add_argument('--update', choices=['sgd', 'adam'], default='sgd', help='optimizer choice')
 
@@ -112,8 +114,10 @@ if __name__ == "__main__":
     parser.add_argument('--least_iters', type=int, default=10, help='at least train how many epochs before stop')
     parser.add_argument('--shrink_embedding', action='store_true', help='shrink the embedding dictionary to corpus (open this if pre-trained embedding dictionary is too large, but disable this may yield better results on external corpus)')
     
-    parser.add_argument('--log_dir', default='D:/PythoProjects/Datasets/logs/log_dir/', help='log path')
-    parser.add_argument('--name', default='tensorflowtest', help='log name')
+    parser.add_argument('--log_enabled', type=int, default=1, help='save log')
+    parser.add_argument('--log_dir', default='D:/PythoProjects/Logs/Conll03_Translated_To_Turkish_Twitter_Shared_Word_Char_Embedding/', help='log path')
+    parser.add_argument('--name', default='', help='log name')
+
 
     
     parser.add_argument('--tasks', nargs='+')
@@ -124,11 +128,12 @@ if __name__ == "__main__":
     #TASKS = ['_target']
 
     
-
-    if args.log_dir is None:
-        args.log_dir = self.decide_log_dir(args)
-    if not os.path.exists(args.log_dir):
-        os.makedirs(args.log_dir)
+    
+    if args.log_enabled > 0:
+        if args.log_dir is None:
+            args.log_dir = self.decide_log_dir(args)
+        if not os.path.exists(args.log_dir):
+            os.makedirs(args.log_dir)
     
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -157,17 +162,30 @@ if __name__ == "__main__":
         dev_features, dev_labels = utils.read_corpus(dev_lines)
         test_features, test_labels = utils.read_corpus(test_lines)
 
-        if argsvars['load_check_point'+task]:
-            if os.path.isfile(argsvars['load_check_point'+task]):
-                print("loading checkpoint: '{}'".format(argsvars['load_check_point'+task]))
-                checkpoint_file = torch.load(argsvars['load_check_point'+task])
+        if argsvars['load_check_point' + task]:
+            if os.path.isfile(argsvars['load_check_point' + task]):
+                print("loading checkpoint: '{}'".format(argsvars['load_check_point' + task]))
+                checkpoint_file = torch.load(argsvars['load_check_point' + task])
                 args.start_epoch = checkpoint_file['epoch']
                 f_map = checkpoint_file['f_map']
                 l_map = checkpoint_file['l_map']
                 c_map = checkpoint_file['c_map']
+
+                f = open("D:/PythoProjects/Datasets/checkpoint_domain_transfer/f_map_train" + task + ".txt","w+")
+                f.write(json.dumps(f_map))
+                f.close() 
+
+                f = open("D:/PythoProjects/Datasets/checkpoint_domain_transfer/l_map_train" + task + ".txt","w+")
+                f.write(json.dumps(l_map))
+                f.close() 
+
+                f = open("D:/PythoProjects/Datasets/checkpoint_domain_transfer/c_map_train" + task + ".txt","w+")
+                f.write(json.dumps(c_map))
+                f.close() 
+
                 train_features, train_labels = utils.read_corpus(lines)
             else:
-                print("no checkpoint found at: '{}'".format(argsvars['load_check_point'+task]))
+                print("no checkpoint found at: '{}'".format(argsvars['load_check_point' + task]))
         else:
             print('constructing coding table')
 
@@ -198,6 +216,18 @@ if __name__ == "__main__":
                 l_map[label] = len(l_map)
 
     #shared char embedding
+    f = open("D:/PythoProjects/Datasets/checkpoint_domain_transfer/f_map_shared.txt","w+")
+    f.write(json.dumps(f_map))
+    f.close() 
+
+    f = open("D:/PythoProjects/Datasets/checkpoint_domain_transfer/l_map_shared.txt","w+")
+    f.write(json.dumps(l_map))
+    f.close() 
+
+    f = open("D:/PythoProjects/Datasets/checkpoint_domain_transfer/c_map_shared.txt","w+")
+    f.write(json.dumps(c_map))
+    f.close() 
+
     char_embeds = nn.Embedding(len(c_map),  args.char_dim)
     word_embeds = nn.Embedding(len(f_map), args.word_dim)
     
@@ -205,7 +235,8 @@ if __name__ == "__main__":
     for task in TASKS:
         # load corpus
         
-        writer = SummaryWriter(log_dir=args.log_dir)
+        if args.log_enabled > 0:
+            writer = SummaryWriter(log_dir=args.log_dir)
         print('loading corpus')
         with codecs.open(argsvars['train_file' + task], 'r', 'utf-8') as f:
             lines = f.readlines()
@@ -217,10 +248,10 @@ if __name__ == "__main__":
         dev_features, dev_labels = utils.read_corpus(dev_lines)
         test_features, test_labels = utils.read_corpus(test_lines)
         args.start_epoch = 0
-        if argsvars['load_check_point'+task]:
-            if os.path.isfile(argsvars['load_check_point'+task]):
-                print("loading checkpoint: '{}'".format(argsvars['load_check_point'+task]))
-                checkpoint_file = torch.load(argsvars['load_check_point'+task])
+        if argsvars['load_check_point' + task]:
+            if os.path.isfile(argsvars['load_check_point' + task]):
+                print("loading checkpoint: '{}'".format(argsvars['load_check_point' + task]))
+                checkpoint_file = torch.load(argsvars['load_check_point' + task])
                 args.start_epoch = checkpoint_file['epoch']
                 #f_map = checkpoint_file['f_map']
                 #l_map = checkpoint_file['l_map']
@@ -228,7 +259,7 @@ if __name__ == "__main__":
                 in_doc_words = checkpoint_file['in_doc_words']
                 train_features, train_labels = utils.read_corpus(lines)
             else:
-                print("no checkpoint found at: '{}'".format(argsvars['load_check_point'+task]))
+                print("no checkpoint found at: '{}'".format(argsvars['load_check_point' + task]))
         else:
             print('constructing coding table')
 
@@ -277,23 +308,24 @@ if __name__ == "__main__":
             print(parameter)
         for name, param in ner_model.named_parameters():
             if param.requires_grad:
-                print (name, param.data)
-        if argsvars['load_check_point'+task]:
-            state_dict_temp = checkpoint_file['state_dict'];
-            state_dict_temp['word_embeds.weight'] = ner_model.word_embeds.weight;
+                print(name, param.data)
+
+        if argsvars['load_check_point' + task]:
+            state_dict_temp = checkpoint_file['state_dict']
+            state_dict_temp['word_embeds.weight'] = ner_model.word_embeds.weight
             ner_model.load_state_dict(state_dict_temp)
             #ner_model.load_state_dict(checkpoint_file['state_dict'])
-        else:
-            if not args.rand_embedding:
-                ner_model.load_pretrained_word_embedding(embedding_tensor)
-            ner_model.rand_init(init_word_embedding=args.rand_embedding)
+         #else:
+             #if not args.rand_embedding:
+                 #ner_model.load_pretrained_word_embedding(embedding_tensor)
+             #ner_model.rand_init(init_word_embedding=args.rand_embedding)
 
         if args.update == 'sgd':
             optimizer = optim.SGD(ner_model.parameters(), lr=args.lr, momentum=args.momentum)
         elif args.update == 'adam':
             optimizer = optim.Adam(ner_model.parameters(), lr=args.lr)
 
-        if argsvars['load_check_point'+task] and args.load_opt:
+        if argsvars['load_check_point' + task] and args.load_opt:
             optimizer.load_state_dict(checkpoint_file['optimizer'])
 
         crit_lm = nn.CrossEntropyLoss()
@@ -332,8 +364,9 @@ if __name__ == "__main__":
         best_acc = float('-inf')
         track_list = list()
         start_time = time.time()
-        #epoch_list = range(args.start_epoch, args.start_epoch + argsvars['epoch'+task])
-        epoch_list = range(args.start_epoch, argsvars['epoch'+task])
+        #epoch_list = range(args.start_epoch, args.start_epoch +
+        #argsvars['epoch'+task])
+        epoch_list = range(args.start_epoch, argsvars['epoch' + task])
 
         patience_count = 0
 
@@ -376,12 +409,13 @@ if __name__ == "__main__":
                     print('DEV : %s : dev_f1: %.4f dev_rec: %.4f dev_pre: %.4f dev_acc: %.4f | %s\n' % (label, dev_f1, dev_rec, dev_pre, dev_acc, msg))
                 (dev_f1, dev_pre, dev_rec, dev_acc, msg) = dev_result['total']
                 
-                #if task is not '':
-                name = "_twitter_twitter_transfer"+task
-                writer.add_scalar("dev_f1"+name, dev_f1, args.start_epoch)
-                writer.add_scalar("dev_pre"+name, dev_pre, args.start_epoch)
-                writer.add_scalar("dev_rec"+name, dev_rec, args.start_epoch)
-                writer.add_scalar("dev_acc"+name, dev_acc, args.start_epoch)
+                
+                if args.log_enabled > 0:
+                    if task is not '':
+                        writer.add_scalar("dev_f1" + name + task, dev_f1, args.start_epoch)
+                        writer.add_scalar("dev_pre" + name + task, dev_pre, args.start_epoch)
+                        writer.add_scalar("dev_rec" + name + task, dev_rec, args.start_epoch)
+                        writer.add_scalar("dev_acc" + name + task, dev_acc, args.start_epoch)
 
                 if dev_f1 > best_f1:
                     patience_count = 0
@@ -401,11 +435,13 @@ if __name__ == "__main__":
                          dev_acc,
                          test_f1,
                          test_acc))
-                    #if task is not '':
-                    writer.add_scalar("test_f1"+name, test_f1, args.start_epoch)
-                    writer.add_scalar("test_pre"+name, test_pre, args.start_epoch)
-                    writer.add_scalar("test_rec"+name, test_rec, args.start_epoch)
-                    writer.add_scalar("test_acc"+name, test_acc, args.start_epoch)
+                    
+                    if args.log_enabled > 0:
+                        if task is not '':
+                            writer.add_scalar("test_f1" + name + task, test_f1, args.start_epoch)
+                            writer.add_scalar("test_pre" + name + task, test_pre, args.start_epoch)
+                            writer.add_scalar("test_rec" + name + task, test_rec, args.start_epoch)
+                            writer.add_scalar("test_acc" + name + task, test_acc, args.start_epoch)
 
                     try:
                         utils.save_checkpoint({
@@ -418,7 +454,7 @@ if __name__ == "__main__":
                             'in_doc_words': in_doc_words
                         }, {'track_list': track_list,
                             'args': vars(args)
-                            }, args.checkpoint + 'cwlm_lstm_crf'+task)
+                            }, args.checkpoint + 'cwlm_lstm_crf' + task)
                     except Exception as inst:
                         print(inst)
 
@@ -446,13 +482,11 @@ if __name__ == "__main__":
                          args.start_epoch,
                          dev_acc,
                          test_acc))
-                    
-                    name = task
-
-                    #if task is not '':
-                    name = "_twitter_twitter_transfer"+task
-                    writer.add_scalar("dev_acc"+name, dev_acc, start_epoch)
-                    writer.add_scalar("test_acc"+name, test_acc, start_epoch)
+                                        
+                    if args.log_enabled > 0:
+                        if task is not '':
+                            writer.add_scalar("dev_acc" + name + task, dev_acc, start_epoch)
+                            writer.add_scalar("test_acc" + name + task, test_acc, start_epoch)
 
                     try:
                         utils.save_checkpoint({
@@ -465,7 +499,7 @@ if __name__ == "__main__":
                             'in_doc_words': in_doc_words
                         }, {'track_list': track_list,
                             'args': vars(args)
-                            }, args.checkpoint + 'cwlm_lstm_crf'+task)
+                            }, args.checkpoint + 'cwlm_lstm_crf' + task)
                     except Exception as inst:
                         print(inst)
 
@@ -476,7 +510,7 @@ if __name__ == "__main__":
                            dev_acc))
                     track_list.append({'loss': epoch_loss, 'dev_acc': dev_acc})
 
-            print('epoch: ' + str(args.start_epoch) + '\t in ' + str(argsvars['epoch'+task]) + ' take: ' + str(time.time() - start_time) + ' s')
+            print('epoch: ' + str(args.start_epoch) + '\t in ' + str(argsvars['epoch' + task]) + ' take: ' + str(time.time() - start_time) + ' s')
 
             if patience_count >= args.patience and args.start_epoch >= args.least_iters:
                 break
@@ -491,3 +525,4 @@ if __name__ == "__main__":
     # printing summary
     print('setting:')
     print(args)
+    
