@@ -11,6 +11,8 @@ from model.lm_lstm_crf import *
 import model.utils as utils
 from model.evaluator import eval_wc
 
+from torch.utils.tensorboard import SummaryWriter
+
 import argparse
 import json
 import os
@@ -22,13 +24,49 @@ import functools
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
+def start_logging(logdir, experiment_name):
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
+    logfilename = os.path.join(logdir, experiment_name + strftime("%Y_%m_%d,%H_%M_%S", gmtime()) + ".log")
+    logginglevel = logging.DEBUG
+    logging.basicConfig(level=logginglevel, filename = logfilename, format='%(asctime)s %(levelname)s %(message)s')
+
+def decide_log_dir(self, args):
+    if "exp_dir" not in args or args.exp_dir is None:
+        args.exp_dir = os.path.expanduser("D:/PythoProjects/Logs/log_dir/")
+
+    if "name" not in args or args.name is None:
+        args.name = "NONAME"
+
+    args.exp_number = self.decide_experiment_number(args.exp_dir, args.name)
+
+    log_dir = os.path.join(args.exp_dir, "results", args.name + str(args.exp_number))
+
+    return log_dir
+
+def decide_experiment_number(self, exp_dir, exp_name):
+    path = os.path.join(exp_dir, "results", exp_name)
+    path = os.path.expanduser(path)
+    numlist = [int(name.replace(path, "")[:-1]) for name in glob.glob(os.path.join(path + "*",""))]
+        
+    if not numlist:
+        return 1
+    else:
+        return max(numlist) + 1
+
+def save_args(self):
+    file_name = os.path.join(self.args.log_dir, "config.json")
+    with open(file_name, 'w') as outf:
+        json.dump(self.args, outf)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Learning with LM-LSTM-CRF together with Language Model')
     parser.add_argument('--rand_embedding', action='store_true', help='random initialize word embedding')
     parser.add_argument('--emb_file', default='D:/PythoProjects/Datasets/glove/glove.6B.100d.txt', help='path to pre-trained embedding')
-    parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/train_tr.txt', help='path to training file')
-    parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/valid_tr.txt', help='path to development file')
-    parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/test_tr.txt', help='path to test file')
+    parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/train_tr_iobes.txt', help='path to training file')
+    parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/valid_tr_iobes.txt', help='path to development file')
+    parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/test_tr_iobes.txt', help='path to test file')
     parser.add_argument('--emb_file_target', default='D:/PythoProjects/Datasets/glove/glove.6B.100d.txt', help='path to pre-trained embedding')
     parser.add_argument('--train_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Train7.txt', help='path to training file')
     parser.add_argument('--dev_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Twitter50K.txt', help='path to development file')
@@ -42,7 +80,7 @@ if __name__ == "__main__":
     parser.add_argument('--epoch', type=int, default=20, help='maximum epoch number')
     parser.add_argument('--epoch_target', type=int, default=20, help='maximum epoch number')
     parser.add_argument('--start_epoch', type=int, default=0, help='start point of epoch')
-    parser.add_argument('--checkpoint', default='D:/PythoProjects/Datasets/checkpoint_domain_transfer/20_20_ner_tr_tr_', help='checkpoint path')
+    parser.add_argument('--checkpoint', default='D:/PythoProjects/CheckPoints/DS_4_To_DS_2_Shared_Word_Char_Embedding/DS_4_To_DS_2_Shared_Word_Char_Embedding_Without_Rand_Init_20_Epoch_Cwlm_Lstm_Crf_', help='checkpoint path')
     parser.add_argument('--caseless', action='store_true', help='caseless or not')
     parser.add_argument('--char_dim', type=int, default=30, help='dimension of char embedding')
     parser.add_argument('--word_dim', type=int, default=100, help='dimension of word embedding')
@@ -70,6 +108,9 @@ if __name__ == "__main__":
     parser.add_argument('--least_iters', type=int, default=20, help='at least train how many epochs before stop')
     parser.add_argument('--shrink_embedding', action='store_true', help='shrink the embedding dictionary to corpus (open this if pre-trained embedding dictionary is too large, but disable this may yield better results on external corpus)')
     
+    parser.add_argument('--log_enabled', type=int, default=1, help='save log')
+    parser.add_argument('--log_dir', default='D:/PythoProjects/Logs/DS_4_To_DS_2_Shared_Word_Char_Embedding_Without_Rand_Init_20_Epoch/', help='log path')
+    parser.add_argument('--name', default='', help='log name')
     
     parser.add_argument('--tasks', nargs='+')
     args = parser.parse_args()
@@ -77,6 +118,12 @@ if __name__ == "__main__":
     TASKS = args.tasks
     TASKS = ['', '_target']
     #TASKS = ['_target']
+
+    if args.log_enabled > 0:
+        if args.log_dir is None:
+            args.log_dir = self.decide_log_dir(args)
+        if not os.path.exists(args.log_dir):
+            os.makedirs(args.log_dir)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -92,6 +139,9 @@ if __name__ == "__main__":
     for task in TASKS:
         # load corpus
         print('loading corpus')
+        
+        if args.log_enabled > 0:
+            writer = SummaryWriter(log_dir=args.log_dir)
         with codecs.open(argsvars['train_file' + task], 'r', 'utf-8') as f:
             lines = f.readlines()
 
@@ -202,10 +252,13 @@ if __name__ == "__main__":
                 print (name, param.data)
         if argsvars['load_check_point'+task]:
             ner_model.load_state_dict(checkpoint_file['state_dict'])
-        else:
-            if not args.rand_embedding:
-                ner_model.load_pretrained_word_embedding(embedding_tensor)
-            ner_model.rand_init(init_word_embedding=args.rand_embedding)
+            state_dict_temp['word_embeds.weight'] = ner_model.word_embeds.weight
+            ner_model.load_state_dict(state_dict_temp)
+            #ner_model.load_state_dict(checkpoint_file['state_dict'])
+        #else:
+            #if not args.rand_embedding:
+                #ner_model.load_pretrained_word_embedding(embedding_tensor)
+            #ner_model.rand_init(init_word_embedding=args.rand_embedding)
 
         if args.update == 'sgd':
             optimizer = optim.SGD(ner_model.parameters(), lr=args.lr, momentum=args.momentum)
@@ -295,6 +348,13 @@ if __name__ == "__main__":
                     print('DEV : %s : dev_f1: %.4f dev_rec: %.4f dev_pre: %.4f dev_acc: %.4f | %s\n' % (label, dev_f1, dev_rec, dev_pre, dev_acc, msg))
                 (dev_f1, dev_pre, dev_rec, dev_acc, msg) = dev_result['total']
 
+                if args.log_enabled > 0:
+                    #if task is not '':
+                    writer.add_scalar("dev_f1" + name + task, dev_f1, args.start_epoch)
+                    writer.add_scalar("dev_pre" + name + task, dev_pre, args.start_epoch)
+                    writer.add_scalar("dev_rec" + name + task, dev_rec, args.start_epoch)
+                    writer.add_scalar("dev_acc" + name + task, dev_acc, args.start_epoch)
+
                 if dev_f1 > best_f1:
                     patience_count = 0
                     best_f1 = dev_f1
@@ -313,6 +373,13 @@ if __name__ == "__main__":
                          dev_acc,
                          test_f1,
                          test_acc))
+
+                    if args.log_enabled > 0:
+                        #if task is not '':
+                        writer.add_scalar("test_f1" + name + task, test_f1, args.start_epoch)
+                        writer.add_scalar("test_pre" + name + task, test_pre, args.start_epoch)
+                        writer.add_scalar("test_rec" + name + task, test_rec, args.start_epoch)
+                        writer.add_scalar("test_acc" + name + task, test_acc, args.start_epoch)
 
                     try:
                         utils.save_checkpoint({
@@ -353,6 +420,10 @@ if __name__ == "__main__":
                          args.start_epoch,
                          dev_acc,
                          test_acc))
+                    if args.log_enabled > 0:
+                        #if task is not '':
+                        writer.add_scalar("dev_acc" + name + task, dev_acc, start_epoch)
+                        writer.add_scalar("test_acc" + name + task, test_acc, start_epoch)
 
                     try:
                         utils.save_checkpoint({
