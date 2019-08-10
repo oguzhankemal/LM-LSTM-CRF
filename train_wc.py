@@ -64,23 +64,31 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Learning with LM-LSTM-CRF together with Language Model')
     parser.add_argument('--rand_embedding', action='store_true', help='random initialize word embedding')
     parser.add_argument('--emb_file', default='D:/PythoProjects/Datasets/glove/glove.6B.100d.txt', help='path to pre-trained embedding')
-    parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/train_tr_iobes.txt', help='path to training file')
-    parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/valid_tr_iobes.txt', help='path to development file')
-    parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/test_tr_iobes.txt', help='path to test file')
+    parser.add_argument('--train_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/train.txt', help='path to training file')
+    parser.add_argument('--dev_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/valid.txt', help='path to development file')
+    parser.add_argument('--test_file', default='D:/PythoProjects/Datasets/conll003/conll003-englishversion/test.txt', help='path to test file')
+    
+    #Turkish
+    #parser.add_argument('--train_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Train7.txt', help='path to training file')
+    #parser.add_argument('--dev_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Twitter50K.txt', help='path to development file')
+    #parser.add_argument('--test_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/WFS7with[p5].txt', help='path to test file')
+
+    #Spanish
+    parser.add_argument('--train_file_target', default='D:/PythoProjects/Datasets/conll2002/esp.train', help='path to training file')
+    parser.add_argument('--dev_file_target', default='D:/PythoProjects/Datasets/conll2002/esp.testb', help='path to development file')
+    parser.add_argument('--test_file_target', default='D:/PythoProjects/Datasets/conll2002/esp.testa', help='path to test file')
     parser.add_argument('--emb_file_target', default='D:/PythoProjects/Datasets/glove/glove.6B.100d.txt', help='path to pre-trained embedding')
-    parser.add_argument('--train_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Train7.txt', help='path to training file')
-    parser.add_argument('--dev_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/Twitter50K.txt', help='path to development file')
-    parser.add_argument('--test_file_target', default='D:/PythoProjects/Datasets/TezDatasets/NERResources_tobe_Distributed/WFS7with[p5].txt', help='path to test file')
+
     parser.add_argument('--gpu', type=int, default=0, help='gpu id')
     parser.add_argument('--batch_size', type=int, default=10, help='batch_size')
     parser.add_argument('--unk', default='unk', help='unknow-token in pre-trained embedding')
     parser.add_argument('--char_hidden', type=int, default=300, help='dimension of char-level layers')
     parser.add_argument('--word_hidden', type=int, default=300, help='dimension of word-level layers')
     parser.add_argument('--drop_out', type=float, default=0.55, help='dropout ratio')
-    parser.add_argument('--epoch', type=int, default=20, help='maximum epoch number')
-    parser.add_argument('--epoch_target', type=int, default=20, help='maximum epoch number')
+    parser.add_argument('--epoch', type=int, default=100, help='maximum epoch number')
+    parser.add_argument('--epoch_target', type=int, default=100, help='maximum epoch number')
     parser.add_argument('--start_epoch', type=int, default=0, help='start point of epoch')
-    parser.add_argument('--checkpoint', default='D:/PythoProjects/CheckPoints/DS_4_To_DS_2_Shared_Word_Char_Embedding/DS_4_To_DS_2_Shared_Word_Char_Embedding_Without_Rand_Init_20_Epoch_Cwlm_Lstm_Crf_', help='checkpoint path')
+    parser.add_argument('--checkpoint', default='D:/PythoProjects/SpanishCheckPoints/DS_1_To_DS_5_Shared_Char_Embedding_Without_Rand_Init_100_Epoch/DS_1_To_DS_5_Shared_Char_Embedding_Without_Rand_Init_100_Epoch_Cwlm_Lstm_Crf_', help='checkpoint path')
     parser.add_argument('--caseless', action='store_true', help='caseless or not')
     parser.add_argument('--char_dim', type=int, default=30, help='dimension of char embedding')
     parser.add_argument('--word_dim', type=int, default=100, help='dimension of word embedding')
@@ -105,11 +113,11 @@ if __name__ == "__main__":
     parser.add_argument('--high_way', action='store_true', help='use highway layers')
     parser.add_argument('--highway_layers', type=int, default=1, help='number of highway layers')
     parser.add_argument('--eva_matrix', choices=['a', 'fa'], default='fa', help='use f1 and accuracy or accuracy alone')
-    parser.add_argument('--least_iters', type=int, default=20, help='at least train how many epochs before stop')
+    parser.add_argument('--least_iters', type=int, default=100, help='at least train how many epochs before stop')
     parser.add_argument('--shrink_embedding', action='store_true', help='shrink the embedding dictionary to corpus (open this if pre-trained embedding dictionary is too large, but disable this may yield better results on external corpus)')
     
     parser.add_argument('--log_enabled', type=int, default=1, help='save log')
-    parser.add_argument('--log_dir', default='D:/PythoProjects/Logs/DS_4_To_DS_2_Shared_Word_Char_Embedding_Without_Rand_Init_20_Epoch/', help='log path')
+    parser.add_argument('--log_dir', default='D:/PythoProjects/SpanishLogs/DS_1_To_DS_5_Shared_Char_Embedding_Without_Rand_Init_100_Epoch/', help='log path')
     parser.add_argument('--name', default='', help='log name')
     
     parser.add_argument('--tasks', nargs='+')
@@ -118,6 +126,7 @@ if __name__ == "__main__":
     TASKS = args.tasks
     TASKS = ['', '_target']
     #TASKS = ['_target']
+    name = args.name
 
     if args.log_enabled > 0:
         if args.log_dir is None:
@@ -244,20 +253,20 @@ if __name__ == "__main__":
         print('building model')
         ner_model = LM_LSTM_CRF(len(l_map), len(c_map), args.char_dim, args.char_hidden, args.char_layers, args.word_dim, args.word_hidden, args.word_layers, len(f_map), args.drop_out,char_embeds, large_CRF=args.small_crf, if_highway=args.high_way, in_doc_words=in_doc_words, highway_layers = args.highway_layers)
         
-        print('parameters')
-        for parameter in ner_model.parameters():
-            print(parameter)
-        for name, param in ner_model.named_parameters():
-            if param.requires_grad:
-                print (name, param.data)
+        #print('parameters')
+        #for parameter in ner_model.parameters():
+            #print(parameter)
+        #for name, param in ner_model.named_parameters():
+            #if param.requires_grad:
+                #print (name, param.data)
         if argsvars['load_check_point'+task]:
             ner_model.load_state_dict(checkpoint_file['state_dict'])
             state_dict_temp['word_embeds.weight'] = ner_model.word_embeds.weight
             ner_model.load_state_dict(state_dict_temp)
             #ner_model.load_state_dict(checkpoint_file['state_dict'])
-        #else:
-            #if not args.rand_embedding:
-                #ner_model.load_pretrained_word_embedding(embedding_tensor)
+        else:
+            if not args.rand_embedding:
+                ner_model.load_pretrained_word_embedding(embedding_tensor)
             #ner_model.rand_init(init_word_embedding=args.rand_embedding)
 
         if args.update == 'sgd':
